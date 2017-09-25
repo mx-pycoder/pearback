@@ -12,7 +12,11 @@ house. But I hope it will be useful for you as well!
 
 This is still experimental. At the time of this writing, I'm testing it on the
 various iOS devices I have available. I take no responsibilty if you decide to
-use this software and if anything goes wrong (see LICENCE).
+use this software and if anything goes wrong (see LICENCE). But if you do
+decide to try it and find any problems or issues, it is appreciated if you
+report them.
+
+Also note that the documentation is incomplete at this time!
 
 ## what it does
 
