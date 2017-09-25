@@ -781,7 +781,7 @@ def _mbdb_string(mbdb, pos):
     ''' parse a string from the mbdb file.
 
     The string length is encoded in 2 bytes prior to the string. If the length
-    is 0xfff, this indicates an empty string. The string is decoded as uft 8
+    is 0xffff, this indicates an empty string. The string is decoded as uft 8
     and if that fails, the bytes are returned as hexstring. '''
 
     size = int.from_bytes(mbdb[pos:pos+2],'big')
