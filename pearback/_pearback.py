@@ -134,7 +134,6 @@ _known_object_keys = set(['UserID', '$class', 'LastModified',
 def load_backup(filepath):
     ''' load backup from given filepath and return a simple backup object '''
 
-
     # find the absolute path of the backup directory
     rootdir = _os.path.abspath(_os.path.expanduser(filepath))
 
@@ -298,8 +297,6 @@ def extract(backup, outdir, hardlink=False, progress=False):
     ''' extract files from given backup to outdir
 
     if hardlink is True, files will be linked instead of copied '''
-
-    # for API purposes we tolerate a single statement per function
 
     filerecords = backup.filerecords()
     if progress is True:
