@@ -413,13 +413,13 @@ def extract_changed_and_removed_files(backup1, backup2, outdir, hardlink=False):
     I use this to extract all files from a previous backup that are no longer
     present with the same contents in the new backup:
 
-    >>> extract_changed_files(old_backup, new_backup, outdir, True)
+    >>> extract_changed_and_removed_files(old_backup, new_backup, outdir, True)
 
     If you want this the other way around (i.e. extract all files from the
     newer backup that where not yet in the previous backup or have been changed
     since), you can flip the backup1 and backup2 arguments:
 
-    >>> extract_changed_files(new_backup, old_backup, outdir, True)
+    >>> extract_changed_and_removed_files(new_backup, old_backup, outdir, True)
     '''
 
     diffs = changed_files(backup1, backup2)
