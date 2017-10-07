@@ -29,11 +29,10 @@ cases are briefly demonstrated here.
 Start by opening an iOS backup and printing some details about it. Note that
 for privacy reasons I have changed some values in output below.
 
-```python
+```
 
 >>> import pearback
->>> b1 =
->>> pearback.load_backup('~/ios_backups/new_backup/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/')
+>>> b1 = pearback.load_backup('~/ios_backups/new_backup/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/')
 >>> pearback.summarize(b1)
 
 Manifest.plist
