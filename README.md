@@ -353,6 +353,31 @@ have been removed before removing the previous backup.
 
 ### commandline tool
 
+The commandline tool can be used in one of three modes of operation: extract,
+info and diff. When called without any parameters you get the following brief
+usage message:
+
+```
+$ pearback
+usage: pearback [-h] {extract,info,diff} ...
+
+pearback - a simple tool to interact with iOS backups
+
+positional arguments:
+  {extract,info,diff}  sub-command help
+    extract            extract backup
+    info               get info on backup
+    diff               list or extract diffs between two backups
+
+optional arguments:
+  -h, --help           show this help message and exit
+
+Example usage: 
+ pearback extract -l ~/temp/backup/047595d0fae972fbed0c51b4a41c7a349e0c47b
+~/temp/outdir
+ pearback info -S ~/temp/backup/047595d0fae972fbed0c51b4a41c7a349e0c47b
+```
+
 This part of documentation is not yet finished.
 
 ### backups.h script
@@ -361,7 +386,12 @@ This part of documentation is not yet finished.
 
 ## installation
 
-This part of documentation is not yet finished.
+I did not yet submit this to PyPI, so currently the only way to install is to
+clone the repository and install manually or via the provided Makefile:
+
+```
+$ sudo make install
+```
 
 ## related work
 
