@@ -1,8 +1,8 @@
 # pearback
 
 Pearback is a python module to work with iOS backups. Backups from devices
-running iOS 5 through 10 are supported. Pearback can be used as a library in
-other projects, or as a command-line tool for interacting with backups. 
+running iOS 5 through 11 are supported. Pearback can be used as a library in
+other projects, or as a command-line tool for interacting with backups.
 
 Pearback was written for my personal use in order to take the manual labour out
 of managaging backups of the couple of iOS devices that we keep around the
@@ -16,7 +16,59 @@ use this software and if anything goes wrong (see LICENCE). But if you do
 decide to try it and find any problems or issues, it is appreciated if you
 report them.
 
-Also note that the documentation is incomplete at this time!
+Also note that the documentation is incomplete at this time.
+
+## example usage
+
+Pearback can be used as a python module, or as a standalone tool. Both use
+cases are briefly demonstrated here. 
+
+
+### using pearback as a module
+
+Start by opening an iOS backup and printing some details about it. Note that
+for privacy reasons I have changed some values in output below.
+
+```python
+
+>>> import pearback
+>>> b1 =
+>>> pearback.load_backup('~/ios_backups/new_backup/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/')
+>>> pearback.summarize(b1)
+
+Manifest.plist
+==============
+#Applications             307
+BuildVersion              15A421
+Date                      2017-05-23T06:58:57.004993
+DeviceName                xxxxxxxxxxx
+IsEncrypted               False
+ProductType               iPhone6,2
+ProductVersion            11.0.2
+SerialNumber              xxxxxxxxxxxx
+SystemDomainsVersion      24.0
+UniqueDeviceID            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Version                   10.0
+WasPasscodeSet            True
+
+Status.plist
+============
+BackupState               new
+Date                      2017-10-06T22:36:38.706502
+IsFullBackup              False
+SnapshotState             finished
+UUID                      xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+Version                   3.2
+
+File stats
+==========
+FileType.RegularFile      12293
+FileType.Symlink          9
+FileType.Directory        6620
+
+```
+
+
 
 ## what it does
 
