@@ -16,12 +16,13 @@ use this software and if anything goes wrong (see LICENCE). But if you do
 decide to try it and find any problems or issues, it is appreciated if you
 report them.
 
-Also note that the documentation is incomplete at this time.
+Also note that this has been written and tested on a Linux machine, it may or
+may not work on Windows. I did not test this.
 
 ## example usage
 
 Pearback can be used as a python module, or as a standalone tool. Both use
-cases are briefly demonstrated here. 
+cases are briefly demonstrated here.
 
 
 ### using pearback as a module
@@ -30,7 +31,6 @@ Start by opening an iOS backup and printing some details about it. Note that
 for privacy reasons I have changed some values in output below.
 
 ```
-
 >>> import pearback
 >>> b1 = pearback.load_backup('~/ios_backups/new_backup/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/')
 >>> pearback.summarize(b1)
@@ -64,7 +64,200 @@ File stats
 FileType.RegularFile      12293
 FileType.Symlink          9
 FileType.Directory        6620
+```
 
+The backup object is simply a namedtuple with some fields containing the
+information stored in the various metadata files associated with an iOS backup.
+
+```
+>>> b1._fields
+('backuptype', 'rootdir', 'db', 'status', 'manifest', 'filerecords')
+>>> b1.backuptype
+<BackupType.IOS10: 2>
+>>> b1.rootdir
+'/home/testuser/ios_backups/new_backup/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+```
+
+Depending on the type of backup the db object is an sqlite3 Connection object
+to Manifest.db or None:
+
+```
+>>> b1.db
+<sqlite3.Connection object at 0x7f22b87cf730>
+```
+
+The status field contains values parsed from Status.plist:
+
+```
+>>> b1.status.Date
+datetime.datetime(2017, 10, 6, 22, 36, 38, 706502)
+>>> b1.status.SnapshotState
+'finished'
+```
+
+The manifest object contains values parsed from Manifest.plist, which includes
+information on installed applications (the example uses the pprint module for
+printing):
+
+```
+>>> b1.manifest.Version
+'10.0'
+>>> len(b1.manifest.Applications.keys())
+307
+>>> applist = [name for name in b1.manifest.Applications.keys() if 'whatsapp'
+>>> in name]
+>>> import pprint
+>>> pprint.pprint(applist)
+['net.whatsapp.WhatsApp.ShareExtension',
+ 'net.whatsapp.WhatsApp',
+ 'net.whatsapp.WhatsApp.Intents',
+ 'group.net.whatsapp.WhatsApp.shared',
+ 'net.whatsapp.WhatsApp.IntentsUI',
+ 'net.whatsapp.WhatsApp.TodayExtension']
+>>> pprint.pprint(b1.manifest.Applications['net.whatsapp.WhatsApp'])
+{'CFBundleIdentifier': 'net.whatsapp.WhatsApp',
+ 'CFBundleVersion': '2.17.20.1127',
+ 'ContainerContentClass': 'Data/Application',
+ 'Path':
+ '/var/containers/Bundle/Application/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/WhatsApp.app'}
+```
+
+The filerecords object is a partial generator function that one can call to
+iterate over the file records in the Manifest.db or Manifest.mbdb database.
+The generator yields file\_entry namedtuples that contain the metadata
+associated with each file record:
+
+```
+>>> b1.filerecords
+functools.partial(<function _db_file_records at 0x7f22b820eae8>, <sqlite3.Connection object at 0x7f22b87cf730>)
+>>> g = b1.filerecords()
+>>> pprint.pprint(next(g)._asdict())
+{'fileID': 'b1529201502c902a0ccbc961de80c6da9b61c67e',
+ 'domain': 'AppDomainPlugin-com.apple.news.diagnosticextension',
+ 'relativePath': '',
+ 'uid': 501,
+ 'gid': 501,
+ 'mtime': datetime.datetime(2017, 10, 6, 21, 32, 13, 4, tzinfo=<UTC>),
+ 'ctime': datetime.datetime(2017, 10, 6, 21, 33, 46, 4, tzinfo=<UTC>),
+ 'btime': datetime.datetime(2015, 12, 16, 22, 52, 11, 2, tzinfo=<UTC>),
+ 'inode': 2058125,
+ 'mode': 16877,
+ 'filetype': <FileType.Directory: 16384>,
+ 'permissions': '0o755',
+ 'size': 0,
+ 'protection': 0,
+ 'extended_attributes': None,
+ 'linktarget': None,
+ 'digest': None}
+>>> pprint.pprint(next(g)._asdict())
+{'fileID': '5b54f06a6837c79d9b6ab332d7eb82c71db1e006',
+ 'domain': 'AppDomainPlugin-com.apple.news.diagnosticextension',
+ 'relativePath': 'Library',
+ 'uid': 501,
+ 'gid': 501,
+ 'mtime': datetime.datetime(2015, 12, 16, 22, 52, 11, 2, tzinfo=<UTC>),
+ 'ctime': datetime.datetime(2017, 5, 8, 20, 14, 38, tzinfo=<UTC>),
+ 'btime': datetime.datetime(2015, 12, 16, 22, 52, 11, 2, tzinfo=<UTC>),
+ 'inode': 2058127,
+ 'mode': 16877,
+ 'filetype': <FileType.Directory: 16384>,
+ 'permissions': '0o755',
+ 'size': 0,
+ 'protection': 0,
+ 'extended_attributes': None,
+ 'linktarget': None,
+ 'digest': None}
+```
+
+In the above example, we use the \_asdict() function in order to convert the
+namedtuples to dictionaries for printing, but for other purposes you can
+simply access the individual fields with dot-notation:
+
+```
+>>> g = b1.filerecords()
+>>> a = next(g)
+>>> a.domain
+'AppDomainPlugin-com.apple.news.diagnosticextension'
+>>> a.inode
+2058125
+>>> a.ctime
+datetime.datetime(2017, 10, 6, 21, 33, 46, 4, tzinfo=<UTC>)
+```
+
+If you are only interested in a subset of the files, this is easily achieved
+using filters:
+
+```
+>>> g = b1.filerecords()
+>>> f = filter(lambda r: 'Camera' in r.domain, g)
+>>> f = filter(lambda r: 'jpg' in r.relativePath, f)
+>>> a = next(f)
+>>> a.relativePath
+'Media/PhotoData/Mutations/DCIM/107APPLE/IMG_7552/Adjustments/FullSizeRender.jpg'
+>>> a.size
+2334762
+>>> a.mtime
+datetime.datetime(2017, 7, 21, 7, 18, 22, 4, tzinfo=<UTC>)
+```
+
+The fileID property of a file\_entry corresonds to the filename by which the
+file is stored in the backup directory. For IOS9 backups, each file is stored
+in the root of the backup directory, for IOS10 and above, there is an
+intermediate structure where the first two characters of the fileID determine
+in which subdirectory the file is stored. This allows you to access a file in
+the backup as follows:
+
+```
+>>> a.fileID
+'344caf5e612c4b118a486e292f61cb0036bfb60a'
+>>> import os.path
+>>> backupfile = os.path.join(b1.rootdir, a.fileID[0:2], a.fileID)
+>>> backupfile
+'/home/testuser/ios_backups/new_backup/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/34/344caf5e612c4b118a486e292f61cb0036bfb60a'
+>>> with open(backupfile, 'rb') as g:
+...     g.read(10)
+...
+...
+b'\xff\xd8\xff\xe0\x00\x10JFIF'
+```
+
+If you want to export all files in the backup to a directory structure, you can
+use the extract function. Depending on your preference you can either copy or
+hardlink the files. If you hardlink, the extracted backup will not take much
+extra space on disk and extraction will be much faster. I'm not sure if this
+also works under Windows though. The function also has a progress option, which
+displays a progress bar using the tqdm module:
+
+```
+>>> pearback.extract(b1, '~/temp/outdir', hardlink=True, progress=True)
+extracting: 100%|███████████████████| 18922/18922 [00:09<00:00, 1942.34 files/s]
+```
+
+The export is structured by domain and does not necessarily reflect the exact
+filesystem layout that the files have internally on the filesystem of your iOS
+device:
+
+```
+$ ls ~/temp/outdir
+AppDomain         HealthDomain    KeychainDomain            SysContainerDomain
+AppDomainGroup    HomeDomain      ManagedPreferencesDomain  SysSharedContainerDomain
+AppDomainPlugin   HomeKitDomain   MediaDomain               SystemPreferencesDomain
+CameraRollDomain  InstallDomain   MobileDeviceDomain        WirelessDomain
+DatabaseDomain    KeyboardDomain  RootDomain
+
+$ ls ~/temp/outdir/CameraRollDomain/Media/DCIM
+100APPLE  101APPLE  102APPLE  103APPLE  104APPLE  105APPLE  106APPLE  107APPLE 108APPLE
+```
+
+If you want to export only a subset of files, this can be done with the
+export\_files function. For example, if we only want to extract all jpg files
+in the CameraRollDomain we can do:
+
+```
+>>> g = b1.filerecords()
+>>> f = filter(lambda r: 'Camera' in r.domain, g)
+>>> f = filter(lambda r: r.relativePath.endswith('JPG'), f)
+>>> pearback.extract_files(b1.backuptype, f, b1.rootdir, '~/temp/outdir2', hardlink=True)
 ```
 
 
