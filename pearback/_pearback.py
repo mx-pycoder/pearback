@@ -583,7 +583,7 @@ def _db_parse_file_column(bytes_):
 
     # apparently since iOS11 the plist includes a field 'Flags' in the plist
     # field as well, but I've only seen value 0 in my backups
-    if objects[1].get('Flags') != 0:
+    if objects[1].get('Flags', 0) != 0:
         raise PearBackError('assumption on plist flags field broken')
 
     # the Uid stored in 'RelativePath' seems to point to index in 'objects'
