@@ -19,6 +19,27 @@ report them.
 Also note that this has been written and tested on a Linux machine, it may or
 may not work on Windows. I did not test this.
 
+## what it does
+
+When used as a module in other projects, pearback provides you with a
+consistent interface to the backup, regardless of whether the backup uses a
+Manifest.mbdb file (iOS 5 through 9) or a Manifest.db file (iOS 10 and 11)
+internally.
+
+As a tool, you can choose between three operating modes: extract, info and
+diff. In extract mode, you can extract all files a given backup to an output
+directory by either copying or hard-linking to the original backup. In info
+mode, you can get some basic information on the backup or you can list all
+metadata of all files in the backup. In diff mode, you can compare two backups
+and either show, or extract the differences between them.
+
+Pearback comes with a script called backup.sh, which can be used to create
+backups from an iOS device in a structured manner (see requirements below).
+Each time a new backup is created, it is compared to the previous backup and
+all files that have changed or have been removed are preserved in a separate
+directory. This gives the user the option to check the preserved file for any
+important data that the user want's to keep.
+
 ## example usage
 
 Pearback can be used as a python module, or as a standalone tool. Both use
@@ -260,31 +281,6 @@ in the CameraRollDomain we can do:
 >>> pearback.extract_files(b1.backuptype, f, b1.rootdir, '~/temp/outdir2', hardlink=True)
 ```
 
-
-## what it does
-
-When used as a module in other projects, pearback provides you with a
-consistent interface to the backup, regardless of whether the backup uses a
-Manifest.mbdb file (iOS 5 through 9) or a Manifest.db file (iOS 10) internally.
-The backup is represented as a backup-object, which consists of the parsed
-Manifest.plist and Status.plist files, as well as an generator function that
-you can use to iterate over each file-record in the backup. You have a couple
-of functions available to extract files from the backup and print some info on
-various aspects of the backup.
-
-As a tool, you can choose between three operating modes: extract, info and
-diff. In extract mode, you can extract all files a given backup to an output
-directory by either copying or hard-linking to the original backup. In info
-mode, you can get some basic information on the backup or you can list all
-metadata of all files in the backup. In diff mode, you can compare two backups
-and either show, or extract the differences between them.
-
-Pearback comes with a script called backup.sh, which can be used to create
-backups from an iOS device in a structured manner (see requirements below).
-Each time a new backup is created, it is compared to the previous backup and
-all files that have changed or have been removed are preserved in a separate
-directory. This gives the user the option to check the preserved file for any
-important data that the user want's to keep.
 
 ## related work
 
