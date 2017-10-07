@@ -69,7 +69,6 @@ FileType.Directory        6620
 ```
 
 
-
 ## what it does
 
 When used as a module in other projects, pearback provides you with a
