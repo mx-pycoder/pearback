@@ -281,6 +281,84 @@ in the CameraRollDomain we can do:
 >>> pearback.extract_files(b1.backuptype, f, b1.rootdir, '~/temp/outdir2', hardlink=True)
 ```
 
+The reason to develop this module was to be able to compare two backups of the
+same iOS device for changes in the file contents. This can be done via the
+changed\_files function. This function compares two files from different
+backups if they have the same (domain, relativePath). The function yields
+tuples (file\_entry\_0, file\_entry\_1) for any differences found.
+
+If a (domain, relativePath) combination is not available in one of the backups,
+the corresponding value in this tuple is set to None. If the contents of the
+file differs between two backups, the file\_entries are both in the result
+tuple. If the file contents is equal, no tuple is returned for that (domain,
+relativePath) combination. Note that only file contents is compared, metadata
+changes are not checked:
+
+```
+>>> b0 = pearback.load_backup('~/ios_backups/old_backup/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/')
+>>> b1 = pearback.load_backup('~/ios_backups/new_backup/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/')
+>>> g = pearback.changed_files(b0, b1)
+```
+
+Here we see an example of a file that only exists in the older backup and has
+been removed since:
+
+```
+>>> d = next(g)
+>>> d[0].relativePath
+'Media/DCIM/107APPLE/IMG_7793.PNG'
+>>> d[1]
+```
+
+And a file that only exists in the newer backup:
+
+```
+>>> g = pearback.changed_files(b0, b1)
+>>> f = filter(lambda r: r[0] is None, g)
+>>> d = next(f)
+>>> d[0]
+>>> d[1].relativePath
+'Media/PhotoData/Photos.sqlite-shm'
+```
+
+And finally a file for which the contents has changed (or in this case has been
+truncated):
+
+```
+>>> g = pearback.changed_files(b0, b1)
+>>> f = filter(lambda r: r[0] is not None and r[1] is not None, g)
+>>> d = next(f)
+>>> d[0].relativePath
+'Library/CallHistoryTransactions/transaction.log'
+>>> d[0].size
+1052
+>>> d[1].size
+0
+```
+
+Now, if we want to extract only those files from the previous backup that are
+no longer present, or have changed since the previous backup we can use the
+following function:
+
+```
+>>> pearback.extract_changed_and_removed_files(b0, b1, '~/temp/outdir3', hardlink=True)
+```
+
+This gives you a directory with all files that are no longer present in the
+current backup. This is used in the backup.sh script to preserve files that
+have been removed before removing the previous backup.
+
+### commandline tool
+
+This part of documentation is not yet finished.
+
+### backups.h script
+
+This part of documentation is not yet finished.
+
+## installation
+
+This part of documentation is not yet finished.
 
 ## related work
 
@@ -301,14 +379,10 @@ Also, most scripts mention one of the timestamps as atime, but it seems that
 this is actually the creation time (btime). This was verified by making several
 backups of a rooted iOS device and comparing actual filesystem timestamps with
 timestamps as recorded in the Manifest.mbdb file. Still, these scripts where
-very helpful in writing the _parse_mbdb_entry and related functions.
+very helpful in writing the \_parse\_mbdb\_entry and related functions.
 
 The parser for the newer iOS10 Manifest.db was my own work, but of course there
 was some inspiration from above parser scripts.
-
-## example usage
-
-TODO
 
 ## requirements
 
