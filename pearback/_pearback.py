@@ -118,14 +118,6 @@ _plistvals = _nt('plist_values', 'uid gid mtime ctime btime inode mode '
 _known_plist_keys = set(['$version', '$top', '$objects', '$archiver'])
 
 
-# expected fields in the $objects field in iOS10 Manifest.db databases
-_known_object_keys = set(['UserID', '$class', 'LastModified',
-                          'ProtectionClass', 'InodeNumber',
-                          'Mode', 'LastStatusChange', 'RelativePath',
-                          'GroupID', 'Birth', 'Size', 'Target',
-                          'ExtendedAttributes', 'Digest'])
-
-
 #######
 # API #
 #######
@@ -567,9 +559,10 @@ def _db_parse_file_column(bytes_):
     # first field is expected to be $null
     if objects[0] != '$null':
         raise PlistParseError("$objects[0] != $null")
+
     # check if we have any new types of of fields
-    if len(set(objects[1].keys()) - _known_object_keys) != 0:
-        raise PlistParseError("$objects[1] fields do not match known fields: {:s}".format(str(objects[1].keys())))
+    #if len(set(objects[1].keys()) - _known_object_keys) != 0:
+    #    raise PlistParseError("$objects[1] fields do not match known fields: {:s}".format(str(objects[1].keys())))
 
     uid = objects[1].get('UserID')
     # contents modification time
@@ -587,6 +580,11 @@ def _db_parse_file_column(bytes_):
     size = objects[1].get('Size')
     # not sure what this is
     protection = objects[1].get('ProtectionClass')
+
+    # apparently since iOS11 the plist includes a field 'Flags' in the plist
+    # field as well, but I've only seen value 0 in my backups
+    if objects[1].get('Flags') != 0:
+        raise PearBackError('assumption on plist flags field broken')
 
     # the Uid stored in 'RelativePath' seems to point to index in 'objects'
     # where the actual value is stored. The Uid.integer property gives the
