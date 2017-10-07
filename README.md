@@ -8,6 +8,9 @@ Pearback was written for my personal use in order to take the manual labour out
 of managaging backups of the couple of iOS devices that we keep around the
 house. But I hope it will be useful for you as well!
 
+Note that for making the backups you still need something like
+libimobiledevice, which can be found here: http://www.libimobiledevice.org/.
+
 ## warning
 
 This is still experimental. At the time of this writing, I'm testing it on the
