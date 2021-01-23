@@ -32,7 +32,6 @@ SOFTWARE.
 
 import sqlite3
 import plistlib as _plistlib
-import biplist as _biplist
 from collections import namedtuple as _nt
 from collections import OrderedDict as _OD
 from enum import Enum as _Enum
@@ -184,8 +183,9 @@ def print_manifest(backup, header=True, sep=None):
         elif isinstance(val, dict):
             field = "#"+field
             val = len(val)
-        elif isinstance(val, _plistlib.Data):
-            continue
+# .Data is deprecated
+        elif isinstance(val, bytes):
+           continue
         elif isinstance(val, _datetime):
             val = val.isoformat()
         toprint[field] = val
@@ -463,7 +463,10 @@ def _read_status_plist(statusfile):
     Here, the toplevel fields of the plist are converted into namedtuple
     fields. Subfields are left as dictionaries. '''
 
-    s = _plistlib.readPlist(statusfile)
+# deprecated
+#    s = _plistlib.readPlist(statusfile)
+    with open(statusfile, 'rb') as f:
+        s = _plistlib.load(f)
 
     # only convert toplevel fields into namedtuple fields, since we have
     # encountered names that are not proper Python identifiers in some of the
@@ -481,7 +484,11 @@ def _read_manifest_plist(manifestplist):
     Here, the toplevel fields of the plist are converted into namedtuple
     fields. Subfields are left as dictionaries. '''
 
-    m = _plistlib.readPlist(manifestplist)
+# deprecated
+#    m = _plistlib.readPlist(manifestplist)
+    with open(manifestplist, 'rb') as f:
+        m = _plistlib.load(f)
+
     # here too, only convert toplevel fields into namedtuple fields
     keys = sorted(m.keys())
     vals = [m[k] for k in keys]
@@ -535,8 +542,8 @@ def _db_file_records(db):
 def _db_parse_file_column(bytes_):
     ''' parse the plist in the file column of the Files table of iOS10+ backups '''
 
-    # NOTE: using the plistlib parser failed, not sure why
-    p = _biplist.readPlistFromString(bytes_)
+    # NOTE: using biplist is not needed anymore, substituted by plistlib
+    p = _plistlib.loads(bytes_)
 
     # check if we have the same fields as in our reference sample
     if set(p.keys()) != _known_plist_keys:
@@ -551,7 +558,7 @@ def _db_parse_file_column(bytes_):
     if archiver != 'NSKeyedArchiver':
         raise PlistParseError('$archiver != NSKeyedArchiver')
     root_uid = p.get('$top').get('root')
-    if root_uid.integer != 1:
+    if root_uid.data != 1:
         raise PlistParseError("$top['root'] != Uid(1)")
 
     # the interesting data is in the $objects field
@@ -584,15 +591,16 @@ def _db_parse_file_column(bytes_):
     # apparently since iOS11 the plist includes a field 'Flags' in the plist
     # field as well, but I've only seen value 0 in my backups
     if objects[1].get('Flags', 0) != 0:
-        raise PearBackError('assumption on plist flags field broken')
+#        raise PearBackError('assumption on plist flags field broken')
+        print("skipping non-zero plist flags field")
 
     # the Uid stored in 'RelativePath' seems to point to index in 'objects'
-    # where the actual value is stored. The Uid.integer property gives the
+    # where the actual value is stored. The Uid.data property gives the
     # integer value
-    relpath = objects[objects[1].get('RelativePath').integer]
+    relpath = objects[objects[1].get('RelativePath').data]
 
     # something similar for the '$class', which seems to be 'MBFile' always
-    class_= objects[objects[1].get('$class').integer].get('$classname')
+    class_= objects[objects[1].get('$class').data].get('$classname')
     if class_ != 'MBFile':
         raise PlistParseError('assumption broken: $class is not always MBFile')
 
@@ -601,8 +609,13 @@ def _db_parse_file_column(bytes_):
     # target item then contains a bplist with key-value pairs under the key
     # 'NS.data'
     if 'ExtendedAttributes' in objects[1]:
-        ea_idx = objects[1]['ExtendedAttributes'].integer
-        extended_attributes = _biplist.readPlistFromString(objects[ea_idx].get('NS.data'))
+        ea_idx = objects[1]['ExtendedAttributes'].data
+        if isinstance(objects[ea_idx], bytes):
+            # load dict from binary plist
+            extended_attributes = _plistlib.loads(objects[ea_idx], fmt=_plistlib.FMT_BINARY, dict_type=dict)
+        else:
+            # normal dict after NS.data
+            extended_attributes = _plistlib.loads(objects[ea_idx].get('NS.data'))
     else:
         extended_attributes = None
 
@@ -611,7 +624,7 @@ def _db_parse_file_column(bytes_):
     if filetype == FileType.Symlink:
         if 'Target' not in objects[1]:
             raise PlistParseError('Assumption broken on symlinks')
-        tgt_idx = objects[1]['Target'].integer
+        tgt_idx = objects[1]['Target'].data
         linktarget = objects[tgt_idx]
     else:
         linktarget = None
@@ -619,7 +632,7 @@ def _db_parse_file_column(bytes_):
     # digest is also not always present, it works similar as above two fields,
     # let's store hex string instead of bytes
     if 'Digest' in objects[1]:
-        d_idx = objects[1]['Digest'].integer
+        d_idx = objects[1]['Digest'].data
         digest = objects[d_idx]
         if type(digest) == dict:
             digest = digest['NS.data']
@@ -792,5 +805,6 @@ def _mbdb_string(mbdb, pos):
         except:
             val = _hexlify(val).decode('utf8')
         return val, pos+2+size
+
 
 
