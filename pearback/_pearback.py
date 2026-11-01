@@ -184,7 +184,7 @@ def print_manifest(backup, header=True, sep=None):
         elif isinstance(val, dict):
             field = "#"+field
             val = len(val)
-        elif isinstance(val, _plistlib.Data):
+        elif isinstance(val, bytes):
             continue
         elif isinstance(val, _datetime):
             val = val.isoformat()
@@ -270,7 +270,8 @@ def extract_files(backuptype, filerecords, rootdir, outdir, hardlink=False):
 
             if f.size == 0:
                 # create empty file
-                _os.mknod(target)
+                with open(target, 'wb'):
+                    pass
             else:
                 if backuptype.value == BackupType.IOS10.value:
                     source = _os.path.join(rootdir, f.fileID[0:2], f.fileID)
@@ -463,7 +464,8 @@ def _read_status_plist(statusfile):
     Here, the toplevel fields of the plist are converted into namedtuple
     fields. Subfields are left as dictionaries. '''
 
-    s = _plistlib.readPlist(statusfile)
+    with open(statusfile, 'rb') as f:
+        s = _plistlib.load(f)
 
     # only convert toplevel fields into namedtuple fields, since we have
     # encountered names that are not proper Python identifiers in some of the
@@ -481,7 +483,8 @@ def _read_manifest_plist(manifestplist):
     Here, the toplevel fields of the plist are converted into namedtuple
     fields. Subfields are left as dictionaries. '''
 
-    m = _plistlib.readPlist(manifestplist)
+    with open(manifestplist, 'rb') as f:
+        m = _plistlib.load(f)
     # here too, only convert toplevel fields into namedtuple fields
     keys = sorted(m.keys())
     vals = [m[k] for k in keys]
