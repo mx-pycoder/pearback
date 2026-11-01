@@ -33,7 +33,8 @@ setup(
         },
     install_requires=[
         'biplist',
-        'tqdm'
+        'tqdm',
+        'pytz'
     ],
     zip_safe=False,
 )
